@@ -8,6 +8,6 @@
 
 ### Where to add evals
 - Root-level `evals/` for cross-cutting topics.
-- App-level `<APP_ROOT>/evals/` for app-scoped topics.
+- App-level `app-web/evals/`, `app-srv/main/evals/` for app-scoped topics.
 
 

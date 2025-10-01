@@ -1,6 +1,6 @@
 # AGENTS.md — Repository Agent Guide
 
-This document defines how agents and contributors operate across the entire system. It establishes a documentation-first, code-second workflow and a single set of norms that app-level guides must extend, not contradict.
+This document defines how agents and contributors operate across the entire repository. It establishes a documentation-first, code-second workflow and a single set of norms that app-level guides must extend, not contradict.
 
 Keep this guide current. When you change behaviors, structures, or standards, update the relevant documentation as part of the change.
 
@@ -21,14 +21,44 @@ Root-level documentation lives at:
 - `/docs` — project-wide documentation (architecture, conventions, onboarding)
 - `/docs/adr` — Architecture Decision Records (authoritative design choices)
 - `/evals` — qualitative evaluations of structures and functionalities
-- `/plans` — proposals and the current state of implementing proposals
+- `/plans` — proposals and the current state of implementing proposals, organized by state:
+  - `plans/drafts/` — early-stage ideas and rough proposals
+  - `plans/pending/` — proposals awaiting implementation
+  - `plans/in-progress/` — actively being worked on, with each plan in its own container folder at `plans/in-progress/plan-name/` containing the plan specification and any other working context required for plan execution
+  - `plans/completed/` — finished implementations
+  - `plans/deprecated/` — superseded or obsolete plans that have been replaced by better approaches or completed work
 
 This structure is mirrored inside each app folder. Examples:
 
 - `app-web/docs`, `app-web/docs/adr`, `app-web/evals`, `app-web/plans`
 - `app-srv/main/docs`, `app-srv/main/docs/adr`, `app-srv/main/evals`, `app-srv/main/plans`
 
-When working within an app, start with that app’s local docs, then consult root docs for cross-cutting standards.
+When working within an app, start with that app's local docs, then consult root docs for cross-cutting standards.
+
+### Plan Lifecycle and Deprecation
+
+Plans follow a clear lifecycle: `drafts` → `pending` → `in-progress` → `completed`, with `deprecated` as a terminal state for superseded plans.
+
+**When to Deprecate a Plan:**
+- The plan's objectives have been achieved by a different, better approach
+- The plan's scope has been superseded by completed work (e.g., the Core Behavior Testing Restructure superseded multiple testing plans)
+- The plan addresses requirements that are no longer relevant
+- The plan conflicts with new architectural decisions or completed work
+
+**How to Deprecate a Plan:**
+1. Move the plan from its current location to `plans/deprecated/`
+2. Update the plan's content with:
+   - A clear deprecation notice at the top
+   - Explanation of why it was deprecated
+   - Reference to the superseding work or plan
+   - Preservation of original content for historical reference
+3. Update any references to the deprecated plan in other documentation
+
+**Deprecated Plan Structure:**
+- Keep the original plan content for historical reference
+- Add a deprecation notice with clear reasoning
+- Reference superseding plans or completed work
+- Mark with appropriate frontmatter (`status: deprecated`)
 
 ## Quick links
 
@@ -66,8 +96,8 @@ Tip for Windows/PowerShell
 
 1) Read documentation
 
-- At app scope: start in `<app>/{docs,docs/adr,evals,plans}`.
-- At repo scope: read `/docs` and `/docs/adr` for global policies; review `/plans` and `/evals` for current direction and quality signals.
+- At app scope: start in `<app>/{docs,docs/adr,evals,plans}`. Check `<app>/plans/in-progress/` for active work, `<app>/plans/pending/` for upcoming priorities, `<app>/plans/drafts/` for early-stage ideas, and `<app>/plans/completed/` for recently finished work. Avoid referencing `<app>/plans/deprecated/` for new work. In-progress plans are stored in container folders at `<app>/plans/in-progress/plan-name/` containing the plan specification and any other working context required for plan execution.
+- At repo scope: read `/docs` and `/docs/adr` for global policies; review `/plans` and `/evals` for current direction and quality signals. Check `plans/in-progress/` for active work, `plans/pending/` for upcoming priorities, `plans/drafts/` for early-stage ideas, and `plans/completed/` for recently finished work. Avoid referencing `plans/deprecated/` for new work.
 - Prefer architecture and ADR pages for the canonical description of structure, technology choices, and tradeoffs.
 
 2) Analyze relevant code
@@ -93,6 +123,28 @@ Tip for Windows/PowerShell
 - Never author evaluation findings or metrics directly from assumptions. Always analyse current source to produce qualitative justifications.
 - When an evaluation is requested, you must execute the evaluation operator as a subagent and follow the evaluation framework. Do not bypass the operator to write eval content by hand, except for mechanical wiring (links, supersede metadata).
 - Superseding is process-bound: use the provided script to archive and wire metadata. Do not hand-edit archive fields.
+
+## Coding Standards
+
+All agents must follow the coding standards defined in [docs/coding-standards.md](./docs/coding-standards.md). Key points include:
+
+- Use of `Record<>` vs `Partial<Record<>>` patterns for appropriate type safety
+- Strict prohibition of `any` type usage
+- Service layer patterns for business logic extraction
+- API/controller migration patterns
+
+Refer to the full coding standards document for detailed guidelines.
+
+## Operating Environment
+
+The development environment has specific characteristics that agents must be aware of:
+
+- **Server Status**: The server is already running in the background. Do not attempt to start the server in your agentic flow as this will cause conflicts.
+- **Background Processes**: When testing changes, you can make requests to the already running server rather than starting a new instance.
+- **Port Usage**: The server typically runs on port 4000. Check existing configurations before assuming port numbers.
+- **Environment Variables**: The server may require specific environment variables to be set. Refer to existing configuration files rather than assuming defaults.
+
+When verifying changes to API endpoints or server functionality, make requests to the existing server instance rather than trying to start a new one.
 
 ## Synchronization Across Agent Configs
 
@@ -177,7 +229,7 @@ Use these generic steps, then adapt to app-specific guides and current proposals
 1) Add or change a capability
 
 - Read relevant ADRs and architecture/docs for the area.
-- Check `/plans` for active proposals; if needed, create or update a plan.
+- Check `/plans/in-progress/` for active proposals, `/plans/pending/` for planned work, `/plans/drafts/` for early ideas, and `/plans/deprecated/` for superseded plans; if needed, create or update a plan in the appropriate state folder (start in drafts for early-stage ideas). In-progress plans are stored in container folders at `/plans/in-progress/plan-name/` containing the plan specification and any other working context required for plan execution.
 - Implement changes in code following app-local patterns.
 - Add/update tests and examples to reflect the behavior.
 - Update documentation and, if the change alters architecture or policy, add or amend an ADR.
@@ -191,8 +243,8 @@ Use these generic steps, then adapt to app-specific guides and current proposals
 
 3) Restructure or migrate code
 
-- Propose the change in `/plans`; add an ADR if the change is architectural.
-- Provide a migration guide in the app’s `docs/` and update key paths.
+- Propose the change in `/plans/pending/` (or move to `/plans/in-progress/` when starting); add an ADR if the change is architectural. Plans can be moved between states: drafts → pending → in-progress → completed, or to deprecated if superseded. In-progress plans are stored in container folders at `/plans/in-progress/plan-name/` containing the plan specification and any other working context required for plan execution.
+- Provide a migration guide in the app's `docs/` and update key paths.
 - Perform the migration in small, verifiable steps with tests.
 
 ## Documentation Update Rules
@@ -209,14 +261,14 @@ Where to update:
 
 - Minor clarifications: edit the closest app-level `docs/*.md` page.
 - Structural or cross-cutting changes: add/update an ADR in `docs/adr` (and the app-level `docs/adr` if scoped to an app).
-- Planned work or migrations: create/update a proposal in `plans/` and track its status.
+- Planned work or migrations: create early ideas in `plans/drafts/`, then promote to `plans/pending/` when ready for review. Track status by moving between folders as appropriate: drafts → pending → in-progress → completed, or to deprecated if superseded. In-progress plans are stored in container folders at `plans/in-progress/plan-name/` containing the plan specification and any other working context required for plan execution.
 - Quality insights, tradeoffs, or regressions: capture in `evals/`.
 
 Process requirements:
 
 - Keep docs adjacent to the change; the PR should not leave them stale.
 - Link code diffs to the updated docs (and ADRs) in the PR description.
-- For breaking changes, include a “Migration Notes” subsection in the modified doc(s).
+- For breaking changes, include a "Migration Notes" subsection in the modified doc(s).
 - If a doc appears stale or contradictory, fix it or open an issue/PR to correct it before proceeding.
 - Maintain the prompt registry (`docs/prompt-registry.md`) when adding new prompts; ensure prompt frontmatter is present.
 
@@ -225,7 +277,7 @@ Process requirements:
 - Documentation-first review completed; facts discovered from docs, not assumptions.
 - App-level docs updated to reflect the change (and root docs if cross-cutting).
 - ADR added/updated when introducing or reversing an architectural decision.
-- Plans updated when the change is part of an ongoing proposal/migration.
+- Plans updated when the change is part of an ongoing proposal/migration (move between `drafts/`, `pending/`, `in-progress/`, `completed/`, and `deprecated/` folders as appropriate). In-progress plans are stored in container folders at `plans/in-progress/plan-name/` containing the plan specification and any other working context required for plan execution.
 - Evals updated if quality characteristics or tradeoffs changed.
 - Tests added/updated; behaviors confirmed against docs.
 - No narrative version pinning; manifests remain the source of versions.
